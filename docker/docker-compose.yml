@@ -1,0 +1,70 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bankingportal-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: banking_portal
+      MYSQL_USER: bankinguser
+      MYSQL_PASSWORD: bankingpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - banking-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: bankingportal-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - banking-network
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: bankingportal-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      SERVER_PORT: 8180
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/banking_portal
+      SPRING_DATASOURCE_USERNAME: bankinguser
+      SPRING_DATASOURCE_PASSWORD: bankingpass
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-change-this-development-secret}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      GEO_API_KEY: ${GEO_API_KEY:-}
+    ports:
+      - "8180:8180"
+    networks:
+      - banking-network
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  banking-network:
+    driver: bridge
