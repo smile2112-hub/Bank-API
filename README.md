@@ -211,6 +211,61 @@ The Docker Compose stack exposes:
 - MySQL: `3306`
 - Redis: `6379`
 
+## Render Deployment
+
+Use:
+
+- **Language/runtime:** Docker
+- **Root Directory:** `.`
+- **Dockerfile Path:** `Dockerfile`
+- **Health Check Path:** `/actuator/health`
+
+Copy `.env.render.example` values into the Render service's Environment page.
+Do not upload or commit `.env.render.example` with real secrets.
+
+Required variables:
+
+| Variable | Description |
+|---|---|
+| `SPRING_DATASOURCE_URL` | MySQL JDBC URL, for example `jdbc:mysql://host:3306/banking_portal` |
+| `SPRING_DATASOURCE_USERNAME` | MySQL username |
+| `SPRING_DATASOURCE_PASSWORD` | MySQL password |
+| `JWT_SECRET` | Base64-encoded secret; generate with `openssl rand -base64 48` |
+| `JWT_EXPIRATION` | JWT lifetime in milliseconds; default `86400000` |
+
+Redis variables:
+
+| Variable | Description |
+|---|---|
+| `SPRING_DATA_REDIS_HOST` | Redis host |
+| `SPRING_DATA_REDIS_PORT` | Redis port, normally `6379` |
+| `SPRING_DATA_REDIS_USERNAME` | Redis username, if required |
+| `SPRING_DATA_REDIS_PASSWORD` | Redis password, if required |
+| `SPRING_DATA_REDIS_SSL` | Set `true` for TLS Redis |
+
+Optional SMTP and geolocation variables are also listed in `.env.render.example`.
+Render supplies `PORT`; the application maps it to Spring's `server.port`.
+
+### Render datasource troubleshooting
+
+If Render reports `Unable to determine Dialect without JDBC metadata`, the
+Spring application could not connect to MySQL. The repository does not include
+a MySQL service, so set all datasource variables in the Render Web Service
+Environment page:
+
+```text
+SPRING_DATASOURCE_URL=jdbc:mysql://<mysql-host>:<mysql-port>/banking_portal?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
+SPRING_DATASOURCE_USERNAME=<mysql-user>
+SPRING_DATASOURCE_PASSWORD=<mysql-password>
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
+```
+
+The database must be reachable from Render and allow external connections.
+The URL must start with `jdbc:mysql://`, not `mysql://`. If the database host
+requires SSL, keep `useSSL=true`; for a local database leave it
+`useSSL=false`.
+
 ## Testing
 
 Tests use JUnit 5, Mockito, H2, and GreenMail.
