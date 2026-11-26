@@ -222,6 +222,9 @@ Use:
 
 Copy `.env.render.example` values into the Render service's Environment page.
 Do not upload or commit `.env.render.example` with real secrets.
+The `render.yaml` Blueprint can create the Docker web service and prompt for its
+required database, JWT, and CORS values. The database must be hosted separately;
+Render does not provide a managed MySQL service.
 
 Required variables:
 
@@ -230,7 +233,7 @@ Required variables:
 | `SPRING_DATASOURCE_URL` | MySQL JDBC URL, for example `jdbc:mysql://host:3306/banking_portal` |
 | `SPRING_DATASOURCE_USERNAME` | MySQL username |
 | `SPRING_DATASOURCE_PASSWORD` | MySQL password |
-| `JWT_SECRET` | Base64-encoded secret; generate with `openssl rand -base64 48` |
+| `JWT_SECRET` | Base64-encoded secret of at least 64 bytes; generate with `openssl rand -base64 64` |
 | `JWT_EXPIRATION` | JWT lifetime in milliseconds; default `86400000` |
 
 Redis variables:
@@ -245,6 +248,14 @@ Redis variables:
 
 Optional SMTP and geolocation variables are also listed in `.env.render.example`.
 Render supplies `PORT`; the application maps it to Spring's `server.port`.
+
+### Vercel frontend
+
+This repository contains only a Java/Spring Boot API; it has no frontend for
+Vercel to build. Deploy the API on Render. If you have a separate frontend on
+Vercel, configure that frontend to call the Render API URL and set
+`CORS_ALLOWED_ORIGINS` on Render to its exact HTTPS origin (without a trailing
+slash). For multiple origins, separate them with commas.
 
 ### Render datasource troubleshooting
 
